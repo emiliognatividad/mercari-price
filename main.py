@@ -70,3 +70,28 @@ def category_map():
     import json
     with open('category_map.json', 'r') as f:
         return json.load(f)
+
+@app.get("/price-distribution")
+def price_distribution(cat1: str = "unknown", cat2: str = "unknown"):
+    import pandas as pd
+    import numpy as np
+    df = pd.read_csv('train.tsv', sep='\t')
+    df = df[df['price'] > 0]
+    df['cat1'] = df['category_name'].apply(lambda x: x.split('/')[0] if isinstance(x, str) and '/' in x else 'unknown')
+    df['cat2'] = df['category_name'].apply(lambda x: x.split('/')[1] if isinstance(x, str) and x.count('/') >= 1 else 'unknown')
+    
+    filtered = df[(df['cat1'] == cat1) & (df['cat2'] == cat2)]['price']
+    if len(filtered) < 10:
+        filtered = df[df['cat1'] == cat1]['price']
+    if len(filtered) < 10:
+        filtered = df['price']
+    
+    filtered = filtered[filtered <= filtered.quantile(0.95)]
+    hist, edges = np.histogram(filtered, bins=20)
+    
+    return {
+        "bins": [round((edges[i] + edges[i+1]) / 2, 2) for i in range(len(hist))],
+        "counts": hist.tolist(),
+        "count": len(filtered),
+        "median": round(float(filtered.median()), 2)
+    }
