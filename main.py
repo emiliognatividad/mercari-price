@@ -67,9 +67,6 @@ def predict(item: Item):
 
 @app.get("/category-map")
 def category_map():
-    import pandas as pd
-    df = pd.read_csv('train.tsv', sep='\t')
-    df['cat1'] = df['category_name'].apply(lambda x: x.split('/')[0] if isinstance(x, str) and '/' in x else 'unknown')
-    df['cat2'] = df['category_name'].apply(lambda x: x.split('/')[1] if isinstance(x, str) and x.count('/') >= 1 else 'unknown')
-    mapping = df.groupby('cat1')['cat2'].unique().apply(sorted).apply(list).to_dict()
-    return mapping
+    import json
+    with open('category_map.json', 'r') as f:
+        return json.load(f)
